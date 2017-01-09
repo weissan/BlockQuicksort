@@ -52,10 +52,9 @@ namespace median {
 		sort_pair(begin, mid, less);
 		return mid;
 	}
-
 	
 	template<typename iter, typename Compare>
-	inline iter* mp_median_of_3_pivots_2(iter begin, iter end, Compare less){
+	inline iter* mp_tertiles_of_3_pivots_2(iter begin, iter end, Compare less){
 		int tmp = (end-begin)/4;
 		iter sek1 = begin+tmp;
 		iter sek2 = begin+(2*tmp);
@@ -74,10 +73,8 @@ namespace median {
 		ret[1] = sek3; 
 		return ret;
 	}
-
 	template<typename iter, typename Compare>
-	inline iter* mp_median_of_5_pivots_2(iter begin, iter end, Compare less){
-//		std::cout << "median length: " << (end-begin) << std::endl;
+	inline iter* mp_tertiles_of_5_pivots_2(iter begin, iter end, Compare less){
 		int tmp = (end-begin)/6;
 		iter sek1 = begin+tmp;
 		iter sek2 = begin+(2*tmp);

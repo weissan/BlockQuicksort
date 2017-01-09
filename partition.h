@@ -1416,7 +1416,7 @@ namespace partition {
 	template< typename iter, typename Compare>
 	struct Multi_Pivot_Hoare_Block_partition_simple {
 		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
-			iter* pivots = median::mp_median_of_3_pivots_2(begin, end-1, less);
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
 			multi_pivot_2_block_partition_simple(begin, end, pivots, less, p1, p2);
 		}
 	};
@@ -1424,7 +1424,7 @@ namespace partition {
 	template< typename iter, typename Compare>
 	struct Multi_Pivot_Hoare_Block_partition_simple_mo5 {
 		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
-			iter* pivots = median::mp_median_of_5_pivots_2(begin, end-1, less);
+			iter* pivots = median::mp_tertiles_of_5_pivots_2(begin, end-1, less);
 			multi_pivot_2_block_partition_simple(begin, end, pivots, less, p1, p2);
 		}
 	};	
