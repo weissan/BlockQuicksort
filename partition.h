@@ -7,7 +7,7 @@
 *
 ******************************************************************************
 * Copyright (C) 2016 Stefan Edelkamp <edelkamp@tzi.de>
-* Copyright (C) 2016 Armin Weiß <armin.weiss@fmi.uni-stuttgart.de>
+* Copyright (C) 2016 Armin Weiï¿½ <armin.weiss@fmi.uni-stuttgart.de>
 *
 * This program is free software: you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -36,7 +36,7 @@
 #include <cmath>
 #include <assert.h>
 #include <functional>
-
+#include "rotations.h"
 //#defineMOREPARTITIONERS
 #ifndef BLOCKSIZE
 #define BLOCKSIZE 128
@@ -151,7 +151,7 @@ namespace partition {
 
 		}//end main loop
 
-		 //Compare and store in buffers final iteration
+		//Compare and store in buffers final iteration
 		index shiftR = 0, shiftL = 0;
 		if (num_right == 0 && num_left == 0) {	//for small arrays or in the unlikely case that both buffers are empty
 			shiftL = ((last - begin) + 1) / 2;
@@ -1064,5 +1064,368 @@ namespace partition {
 		}
 	};
 
+	template<typename iter>
+	void printArray(iter begin, iter end,  const std::string &desc) {
+		int i = 0;
 
+		if((end - begin) < 0) {
+			std::cout << desc << " printing failed because begin was above end" << std::endl;
+			return;
+		}
+		iter begin2 = begin;
+		iter end2 = end;
+		std::cout << "Printing array: " << desc << std::endl;
+		while (begin2 != end2) {
+			
+			std::cout << *begin2 << " ";
+			begin2++;
+			i++;
+			
+		}
+		std::cout << std::endl;
+
+	}
+
+	template<typename iter, typename Compare>
+	inline void multi_pivot_2_block_partition_simple(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		int block = 2 * BLOCKSIZE;
+
+		index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		std::iter_swap(pivot_positions[0], begin);
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *begin;
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[0] = begin;
+		pivot_positions[1] = last;
+		last--;
+		begin++;
+
+		int num_ll = 0;
+		int num_lr = 0;
+		int num_rl = 0;
+		int num_rr = 0;
+		iter middle = begin;
+		int delta = BLOCKSIZE;
+		int start_ll = 0;
+		int start_lr = 0;
+		int start_rl = 0;
+		int start_rr = 0;
+		int num;
+		index i, j;
+		while (last - begin + 1 > 2 * BLOCKSIZE) {
+			if(num_ll == 0 && num_lr == 0) {
+				start_ll = 0;
+				start_lr = 0;
+				for (i = 0; i < BLOCKSIZE; i++) {
+					L[num_ll] = i;
+					L[delta + num_lr] = i;
+
+					//Is it in the right partition
+					num_lr += less(p2, begin[i]);
+					//Is it in the left partition
+					num_ll += less(begin[i], p1);
+				}
+			}
+
+			if(num_rl == 0 && num_rr == 0) {
+				start_rl = 0;
+				start_rr = 0;
+				for (j = 0; j < BLOCKSIZE; j++) {
+					R[num_rl] = j;
+					R[delta + num_rr] = j;
+					
+					//Current index
+					auto leftIndex = (last - j);
+					//Is it in the left partition
+					int b1 = (less(*leftIndex, p1));
+					num_rl += b1;
+					//Is it in the middle partition
+					num_rr += (!b1 && !less(p2, *leftIndex));
+				}
+			}
+
+			//Rearrange the elements
+			//Swap lr with rr
+			
+			num = std::min(num_lr, num_rr);
+			for (int k = 0; k < num; k++) {
+				std::iter_swap(begin + L[start_lr + delta + k], last-R[start_rr + delta + k]);
+			}
+			start_lr += num;
+			start_rr += num;
+			num_lr -= num;
+			num_rr -= num;
+
+			//Edge case where we have empty LL elements that are already in place
+			
+			if(middle == begin) {
+				int ll = 0;
+				while (*(L + start_ll) == ll && num_ll > 0 ){
+					++start_ll;
+					--num_ll;
+					++ll;
+					middle++;
+				}
+			}
+
+			//lr <-> rl
+			num = std::min(num_lr, num_rl);
+			for (int k = 0; k < num; k++) {
+				//Ensuring our middle partition is large enough
+				while (*(L + start_ll) < *(L + start_lr + delta + k) && num_ll > 0) {
+					std::iter_swap(middle, begin + L[start_ll]);
+					++start_ll;
+					--num_ll;
+					++middle;
+				}
+				rotations::rotate3(*(begin + L[start_lr + delta + k]), *middle, *(last - R[start_rl + k]));
+				middle++;
+			} 
+			
+			start_rl += num;
+			start_lr += num;
+			num_rl -= num;
+			num_lr -= num;
+			
+			//Empty ll
+			if(num_lr == 0) { 
+				for(int k = 0; k < num_ll; k++) {
+					std::iter_swap(begin + L[start_ll + k], middle);
+					middle++;
+				}
+				start_ll += num_ll;
+				num_ll = 0;
+			}		
+
+			begin += (num_ll == 0 && num_lr == 0) ? BLOCKSIZE : 0;
+			last -= (num_rl == 0 && num_rr == 0) ? BLOCKSIZE : 0;
+		}
+		
+		//Compare and store in buffers final iteration
+		index shiftR = 0;
+		index shiftL = 0;
+		if(num_ll == 0 && num_lr == 0 && num_rl == 0 && num_rr == 0) {
+			shiftL = ((last-begin) + 1) / 2; 
+			shiftR = (last - begin) + 1 - shiftL;
+			start_ll = 0;
+			start_lr = 0;
+			start_rr = 0;
+			start_rl = 0;
+			for (index j = 0; j < shiftL; j++) {
+				L[num_ll] = j;
+				L[delta + num_lr] = j;
+				//Is it in the right partition
+				num_lr += less(p2, begin[j]);
+				//Is it in the left partition
+				num_ll += less(begin[j], p1);
+				R[num_rl] = j;
+				R[delta + num_rr] = j;
+				
+				//Current index
+				auto leftIndex = (last - j);
+				//Is it in the left partition
+				int b1 = (less(*leftIndex, p1));
+				num_rl += b1;
+				//Is it in the middle partition
+				num_rr += (!b1 && !(less(p2, *leftIndex)));
+			}
+			
+			if(shiftL < shiftR) {
+				auto subIndex = (last - shiftR + 1);
+				int b1 = (less(*subIndex, p1));
+				R[num_rl] = shiftR - 1;
+				R[delta + num_rr] = shiftR - 1;
+				num_rl += b1;
+				num_rr += !b1 && !less(p2, *subIndex);
+			}
+		}
+		else if(num_rl != 0 || num_rr != 0) {
+			shiftL = (last - begin) - BLOCKSIZE + 1;
+			shiftR = BLOCKSIZE;
+			start_ll = 0;
+			start_lr = 0;
+			for(index j = 0; j < shiftL; j++) {
+				L[num_ll] = j;
+				L[delta + num_lr] = j;
+				num_ll += (less(begin[j], p1));
+				num_lr += less(p2, begin[j]);
+			}
+		} else {
+			shiftL = BLOCKSIZE;
+			shiftR = (last - begin) - BLOCKSIZE + 1;
+			start_rl = 0;
+			start_rr = 0;
+			for (index j = 0; j < shiftR; j++) {
+				R[num_rl] = j;
+				R[delta + num_rr] = j;
+				bool b1 = less(*(last-j), p1);
+				num_rl += b1;
+				num_rr += !b1 && !less(p2, *(last-j));
+			}
+		}
+
+		//rearrange final iteration
+		//Swap lr with rr
+		num = std::min(num_lr, num_rr);
+		for (int k = 0; k < num; k++) {
+			std::iter_swap(begin + L[start_lr + delta + k], last-R[start_rr + delta + k]);
+		}
+		start_lr += num;
+		start_rr += num;
+		num_lr -= num;
+		num_rr -= num;
+
+		//Edge case where we have empty LL elements that are already in place
+		int ll = 0;
+		if(middle == begin) {
+			while (*(L + start_ll) == ll && num_ll > 0 ){
+				++start_ll;
+				--num_ll;
+				++ll;
+				middle++;
+			}
+		}
+
+		//lr <-> rl
+		num = std::min(num_lr, num_rl);
+		for (int k = 0; k < num; k++) {
+			//Ensuring our middle partition is large enough
+			while (*(L + start_ll) < *(L + start_lr + delta + k) && num_ll > 0) {
+				std::iter_swap(middle, begin + L[start_ll]);
+				++start_ll;
+				--num_ll;
+				++middle;
+			}
+			rotations::rotate3(*(begin + L[start_lr + delta + k]), *middle, *(last - R[start_rl + k]));
+			middle++;
+		} 
+		
+		start_rl += num;
+		start_lr += num;
+		num_rl -= num;
+		num_lr -= num;
+		
+		//Empty ll
+		if(num_lr == 0) { 
+			for(int k = 0; k < num_ll; k++) {
+				std::iter_swap(begin + L[start_ll + k], middle);
+				middle++;
+			}
+			start_ll += num_ll;
+			num_ll = 0;
+		}		
+
+		begin += (num_ll == 0 && num_lr == 0) ? shiftL : 0;
+		last -= (num_rl == 0 && num_rr == 0) ? shiftR : 0;
+		
+		iter right = last+1;
+		
+		int k = 0;
+		int l = last - begin;
+		//TODO: More elegant way of detecting this?
+		bool rightLoop = num_rl != 0 || num_rr != 0;
+		
+		//If left side is empty, and right side as elements	
+		while(num_rl != 0 || num_rr != 0){
+			//search from left to right 
+			while((( num_rr != 0 && l == R[start_rr + delta + num_rr - 1] ) || (num_rl != 0 && l == R[start_rl + num_rl - 1])) && l > k ){
+				bool b = num_rl != 0 && (l == R[start_rl + num_rl - 1]); // 1 if left 
+				std::iter_swap(last - l, middle);
+				middle += b;
+				num_rr -= !b;
+				num_rl -= b;
+				l--;
+			}
+			
+			//search from right to left
+			while((num_rr == 0 || k != R[delta + start_rr]) && (num_rl == 0 || k != R[start_rl]) && l > k) 
+			{  
+				k++;
+			}
+			
+			bool mid = num_rr != 0 && k == R[delta + start_rr]; //Is 1 if element is a mid element, false no mid elements
+			bool left = num_rl != 0 && k == R[start_rl]; 
+			//Rotate last middle begin or last begin begin
+			rotations::rotate3(*(last - k) , *(last - l),   *((last - l) - (left * ((last - l) - middle))));
+			
+			l -= l > k;
+			k += l > k;	
+			middle += left;
+			start_rl += left;
+			num_rl -= left;
+			num_rr -= mid;
+			start_rr += mid;
+			assert(num_rr > -1); assert(num_rl > -1);
+		}
+		
+		
+		//If we executed the right loop and emptied the blocks we cannot 
+		//guarantee that the right pointer was moved all the way so we just move it by
+		//the difference between k and l.
+		if(rightLoop)
+			right = (last - l + (*(last - l) < p2)); //TODO: Can there be a more elegant way?
+
+		//Should ensure the edge case of middle being ahead of begin
+		k += middle - (begin + k);
+
+		//If right side is empty and left side has elements
+		while(num_ll != 0 || num_lr != 0) {
+
+			while(((num_lr != 0 && k != L[start_lr + delta]) || (num_ll != 0 && num_lr == 0)) && l > k) {
+				bool b = num_ll != 0 && (k == L[start_ll]);	
+				std::iter_swap(begin + k,  middle);	
+				middle += b;
+				num_ll -= b;
+				start_ll += b;
+				k++;
+			}
+
+
+			while( num_lr != 0 && l == L[start_lr + num_lr + delta - 1] && l > 0 && l > k) {
+				num_lr--;
+				l--;
+				right--;
+			}
+			bool b = num_ll != 0 && (l == L[start_ll + num_ll - 1]);
+			//Rotate last middle begin or last begin begin
+			rotations::rotate3(*(begin + l), *(begin + k), *((begin + k) - (b * ((begin + k) - middle))));
+			middle += b;
+			num_ll -= b;
+			
+			bool isRight = num_lr != 0;
+			num_lr -= isRight;
+			start_lr += isRight;
+			
+			l--;
+			k++;
+			right -= isRight;
+			assert(num_lr > -1); assert(num_ll > -1);
+		}
+
+		std::iter_swap(pivot_positions[0], middle - 1);
+		std::iter_swap(pivot_positions[1], right);
+		*ret1 = (middle - 1);
+		*ret2 = right;
+	}
+
+	//Multi-Pivot part 
+	template< typename iter, typename Compare>
+	struct Multi_Pivot_Hoare_Block_partition_simple {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			multi_pivot_2_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Multi_Pivot_Hoare_Block_partition_simple_mo5 {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_5_pivots_2(begin, end-1, less);
+			multi_pivot_2_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};	
 };
