@@ -25,7 +25,8 @@
 #include <future>
 #include <cstdlib>
 #ifndef IS_THRESH
-#define IS_THRESH (1 << 4)
+#define IS_THRESH 20 //(1 << 4)
+
 #endif // !IS_THRESH
 #if defined(PAPI)
 #include <papi.h>
@@ -527,12 +528,13 @@ namespace quicksort {
 		} while (s != stack);
 	}
 
-
 	//main Multi-Pivot Quicksort loop NOT supporting Partitioner with check for duplicate elements
 	//Implementation based on Tuned Quicksort (Elmasry, Katajainen, Stenmark)
 	//available at http://www.diku.dk/~jyrki/Myris/Kat2014S.html
 	template<template<class , class> class Partitioner, typename iter, typename Compare>
+
 	inline void qsort_dual_pivot_thousand(iter begin, iter end, Compare less) {
+
 		const int depth_limit = 2 * ilogb((double)(end - begin)) + 3;
 		iter stack[80];
 		iter* s = stack;
@@ -547,6 +549,7 @@ namespace quicksort {
 		do {
 			assert((end >= begin));
 			if (depth < depth_limit && (end - begin > 1000)) {
+
 				iter p1;
 				iter p2;
 				
@@ -588,6 +591,7 @@ namespace quicksort {
 			}
 			else {
 				
+
 				if (end - begin > 1000) { // if recursion depth limit exceeded
 #ifdef PARTIAL_SORT_COUNT
 					partial_sort_count++;
@@ -614,6 +618,7 @@ namespace quicksort {
 
 	template<template<class , class> class Partitioner, typename iter, typename Compare>
 	inline void qsort_dual_pivot_equal_elements_thousand(iter begin, iter end, Compare less) {
+
 		const int depth_limit = 2 * ilogb((double)(end - begin)) + 3;
 		iter stack[80];
 		iter* s = stack;
@@ -627,6 +632,7 @@ namespace quicksort {
 		++d_s_top;
 		do {
 			assert((end >= begin));
+
 			if (depth < depth_limit && (end - begin > 1000)) {
 				iter p1;
 				iter p2;

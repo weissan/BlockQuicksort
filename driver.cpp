@@ -63,7 +63,9 @@
 #endif
 
 
-extern int ilogb(double) throw();
+#if not __APPLE__
+	extern int ilogb(double) throw();
+#endif
 
 //for counting numbers of calls to std::partial_sort
 #define PARTIAL_SORT_COUNT

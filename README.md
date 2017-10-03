@@ -34,3 +34,58 @@ This package consists of the following files:
 	make <algorithm>.comp
 	make <algorithm>.move
   These tests are not implemented for all algorithms.
+
+
+
+# How to build single programs
+Build a single algorithm can be done through: 
+```
+	make build ALGNAME="algorithm_name"
+```
+
+Build a single algorithm with a custom type: 
+```
+	make build ALGNAME="algorithm_name" TYPE="custom_type"	
+```
+
+#How to run
+## Run single programs
+```
+	./a.out input_size distribution_type seed
+```
+distribution_type is given by 1 letter, see driver.cpp for further details, 
+it has quite a few!. 
+
+## Run tests
+There are quite a few testing methods, I encourage you to go exploring yourself, however 
+the most notable are listed below. 
+
+
+### newtimetest
+Runs all algorithms with the permutations defined in the variable: newsmalldata. 
+We tested with the variable existingsmalldata
+
+```
+make newtimetest
+```
+
+### timetest
+Existing method we do not implement. 
+Runs a lot of tests with different types and permutations, takes a while!
+```
+make timetest
+```
+
+### perftimetest
+Runs the perf state command on all algorithms, on all input sizes with random permutation.
+Used to see instructions count, branches and branch misses. 
+
+```
+make perftimetest
+```
+
+### newblocksizetest
+Runs blocksize tests on both blocked and multi-pivot blocked algorithms.
+```
+make newblocksizetest
+```

@@ -52,6 +52,51 @@ namespace median {
 		sort_pair(begin, mid, less);
 		return mid;
 	}
+	
+	template<typename iter, typename Compare>
+	inline iter* mp_tertiles_of_3_pivots_2(iter begin, iter end, Compare less){
+		int tmp = (end-begin)/4;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(2*tmp);
+		iter sek3 = begin+(3*tmp);
+		sort_pair(begin, sek1, less);
+		sort_pair(sek3, end, less);
+		sort_pair(sek2, end, less);
+		sort_pair(sek2, sek3, less);
+		sort_pair(begin, sek3, less);
+		sort_pair(begin, sek2, less);
+		sort_pair(sek1, end, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek1, sek2, less);
+		iter* ret = new iter[2];
+		ret[0] = sek1;
+		ret[1] = sek3; 
+		return ret;
+	}
+	template<typename iter, typename Compare>
+	inline iter* mp_tertiles_of_5_pivots_2(iter begin, iter end, Compare less){
+		int tmp = (end-begin)/6;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(2*tmp);
+		iter sek3 = begin+(3*tmp);
+		iter sek4 = begin+(4*tmp);
+		iter sek5 = begin+(5*tmp);
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek1, sek4, less);	
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		assert(sek2 != sek4);
+		iter* ret = new iter[2];
+		ret[0] = sek2;
+		ret[1] = sek4; 
+		return ret;
+	}
 
 	template<typename iter, typename Compare>
 	inline iter median_of_5(iter begin, iter end, Compare less) {

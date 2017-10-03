@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <functional>
 #include "rotations.h"
+
 #ifndef BLOCKSIZE
 #define BLOCKSIZE 128
 #endif
@@ -1069,7 +1070,6 @@ namespace partition {
 
 		if((end - begin) < 0) {
 			std::cout << desc << " printing failed because begin was above end" << std::endl;
-			
 			return;
 		}
 		iter begin2 = begin;
@@ -1085,7 +1085,6 @@ namespace partition {
 		std::cout << std::endl;
 
 	}
-
 
 	template<typename iter, typename Compare>
 	inline void multi_pivot_2_block_partition_simple(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
@@ -1148,7 +1147,6 @@ namespace partition {
 					num_rr += (!b1 && !less(p2, *leftIndex));
 				}
 			}
-
 			//Rearrange the elements
 			//Swap lr with rr
 			
@@ -1669,7 +1667,8 @@ namespace partition {
 			for (index j = 0; j < limit; j++) {
 					block1[num1] = j;
 					int o = less(counter[j], p1);
-					num1 += o;	
+					num
+          1 += o;	
 					block2[num2] = j;
 					num2 += less(counter[j], p2) - o;
 			}
