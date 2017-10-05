@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <functional>
 #include "rotations.h"
-//#defineMOREPARTITIONERS
+
 #ifndef BLOCKSIZE
 #define BLOCKSIZE 128
 #endif
@@ -1147,7 +1147,6 @@ namespace partition {
 					num_rr += (!b1 && !less(p2, *leftIndex));
 				}
 			}
-
 			//Rearrange the elements
 			//Swap lr with rr
 			
@@ -1329,7 +1328,7 @@ namespace partition {
 		//TODO: More elegant way of detecting this?
 		bool rightLoop = num_rl != 0 || num_rr != 0;
 		
-		//If left side is empty, and right side as elements	
+		//If left side is empty, and right side has elements	
 		while(num_rl != 0 || num_rr != 0){
 			//search from left to right 
 			while((( num_rr != 0 && l == R[start_rr + delta + num_rr - 1] ) || (num_rl != 0 && l == R[start_rl + num_rl - 1])) && l > k ){
@@ -1428,4 +1427,1051 @@ namespace partition {
 			multi_pivot_2_block_partition_simple(begin, end, pivots, less, p1, p2);
 		}
 	};	
+
+
+
+	//Lomuto based part
+
+	template<typename iter, typename Compare>
+	inline iter lomuto_block_partition_simple(iter begin, iter end, iter pivot_position, Compare less) {
+		typedef typename std::iterator_traits<iter>::difference_type index;
+		index indexL[BLOCKSIZE];
+		iter last = end - 1;
+		std::iter_swap(pivot_position, last);
+		const typename std::iterator_traits<iter>::value_type & pivot = *last;
+		pivot_position = last;
+		iter counter = begin;
+		last--;
+
+		int num_left = 0;
+		int start_left = 0;
+		//main loop
+		iter offset = begin;
+
+		while (last - counter + 1 > 0)//BLOCKSIZE)
+		{
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					indexL[num_left] = j;
+					num_left += less(counter[j], pivot);				
+			}
+			//rearrange elements
+			
+			for (int j = 0; j < num_left; j++){
+				std::iter_swap(offset, counter+indexL[start_left+j]);
+				offset++;
+			}
+
+			num_left = 0;//num;
+			start_left =0;// num;
+			counter += limit;
+
+		}//end main loop
+
+		std::iter_swap(pivot_position, offset);// fetch the pivot 
+		return offset;
+	}
+
+	template<typename iter, typename Compare>
+	inline iter lomuto_block_partition(iter begin, iter end, iter pivot_position, Compare less) {
+		typedef typename std::iterator_traits<iter>::difference_type index;
+		index indexL[BLOCKSIZE];
+		iter last = end - 1;
+		std::iter_swap(pivot_position, last);
+		const typename std::iterator_traits<iter>::value_type & pivot = *last;
+		pivot_position = last;
+		iter counter = begin;
+		last--;
+
+		int num_left = 0;
+		int start_left = 0;
+		//main loop
+		iter offset = begin;
+
+		while (last - counter + 1 > BLOCKSIZE)//BLOCKSIZE)
+		{
+			//Compare and store in buffers
+			for (index j = 0; j < BLOCKSIZE; j++) {
+					indexL[num_left] = j;
+					num_left += less(counter[j], pivot);				
+			}
+			//rearrange elements
+			
+			for (int j = 0; j < num_left; j++){
+				std::iter_swap(offset, counter+indexL[start_left+j]);
+				offset++;
+			}
+
+			num_left = 0;//num;
+			start_left =0;// num;
+			counter += BLOCKSIZE;
+
+		}//end main loop
+		
+		int t = (last-counter+1);
+		//int limit = std::min(BLOCKSIZE, t);
+		for (index j = 0; j < t; j++) {
+				indexL[num_left] = j;
+				num_left += less(counter[j], pivot);				
+		}
+		//rearrange elements
+		
+		for (int j = 0; j < num_left; j++){
+			std::iter_swap(offset, counter+indexL[start_left+j]);
+			offset++;
+		}
+
+	//	num_left = 0;//num;
+	//	start_left =0;// num;
+	//	counter += t;
+
+		std::iter_swap(pivot_position, offset);// fetch the pivot 
+		return offset;
+	}
+
+	template<typename iter, typename Compare>
+	inline iter lomuto_block_partition_less(iter begin, iter end, iter pivot_position, Compare less) {
+		typedef typename std::iterator_traits<iter>::difference_type index;
+		index indexL[BLOCKSIZE];
+		iter last = end - 1;
+		std::iter_swap(pivot_position, last);
+		const typename std::iterator_traits<iter>::value_type & pivot = *last;
+		pivot_position = last;
+		iter counter = begin;
+		last--;
+
+		int num_left = 0;
+		int start_left = 0;
+		//main loop
+		iter offset = begin;
+
+		while (last - counter + 1 > BLOCKSIZE)//BLOCKSIZE)
+		{
+			//Compare and store in buffers
+			for (index j = 0; j < BLOCKSIZE; j++) {
+					indexL[num_left] = j;
+					num_left += less(counter[j], pivot);				
+			}
+			//rearrange elements
+			
+			for (int j = 0; j < num_left; j++){
+				std::iter_swap(offset+j, counter+indexL[start_left+j]);
+				//offset++;
+			}
+			offset += num_left;
+			num_left = 0;//num;
+			start_left =0;// num;
+			counter += BLOCKSIZE;
+
+		}//end main loop
+		
+		int t = (last-counter+1);
+		//int limit = std::min(BLOCKSIZE, t);
+		for (index j = 0; j < t; j++) {
+				indexL[num_left] = j;
+				num_left += less(counter[j], pivot);				
+		}
+		//rearrange elements
+		
+		for (int j = 0; j < num_left; j++){
+			std::iter_swap(offset+j, counter+indexL[start_left+j]);
+			//offset++;
+		}
+		offset+= num_left;
+	//	num_left = 0;//num;
+	//	start_left =0;// num;
+		//counter += t;
+
+		std::iter_swap(pivot_position, offset);// fetch the pivot 
+		return offset;
+	}
+
+	template<typename iter, typename Compare>
+	struct Lomuto_block_partition_simple {
+		static inline iter partition(iter begin, iter end, Compare less) {
+			//choose pivot
+			iter mid = median::median_of_3(begin, end, less);
+			//partition
+			return lomuto_block_partition_simple(begin, end, mid, less);
+		}
+		static inline iter partition(iter begin, iter end, iter pivot, Compare less) {
+			//partition
+			return lomuto_block_partition_simple(begin, end, pivot, less);
+		}
+	};
+
+	template<typename iter, typename Compare>
+	struct Lomuto_block_partition {
+		static inline iter partition(iter begin, iter end, Compare less) {
+			//choose pivot
+			iter mid = median::median_of_3(begin, end, less);
+			//partition
+			return lomuto_block_partition(begin, end, mid, less);
+		}
+		static inline iter partition(iter begin, iter end, iter pivot, Compare less) {
+			//partition
+			return lomuto_block_partition(begin, end, pivot, less);
+		}
+	};
+
+	template<typename iter, typename Compare>
+	struct Lomuto_block_partition_less {
+		static inline iter partition(iter begin, iter end, Compare less) {
+			//choose pivot
+			iter mid = median::median_of_3(begin, end, less);
+			//partition
+			return lomuto_block_partition(begin, end, mid, less);
+		}
+		static inline iter partition(iter begin, iter end, iter pivot, Compare less) {
+			//partition
+			return lomuto_block_partition(begin, end, pivot, less);
+		}
+	};
+
+
+	
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_simple(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		index block1[BLOCKSIZE], block2[BLOCKSIZE];
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		//std::cout << "pivots: " << *pivot_positions[0] << " " << *pivot_positions[1] << std::endl;
+		
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+		//printArray(begin, end, "Start array");
+
+		int num1 = 0;
+		int num2 = 0;
+		int start1 = 0;
+		int start2 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		int num;
+		while (last - counter + 1 > 0) {
+
+			//Seg fault issue here, look at simple
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					block1[num1] = j;
+					int o = less(counter[j], p1);
+					num
+          1 += o;	
+					block2[num2] = j;
+					num2 += less(counter[j], p2) - o;
+			}
+			//Rearrange the elements
+			//Find the first element we have stored in a block
+			num = num1+num2;
+			int k = 0; 
+			while(k < num){
+				int res = (block2[start2] < block1[start1]) ? block2[start2] : block1[start1];
+				int b = (res == block2[start2] && num2 != 0);
+				auto difference = (offset2-offset1);
+				rotations::rotate3(*(counter+res), *offset2, *(offset1 + (difference * b)));
+				offset2++;
+				offset1 += 1-b;
+				start1 += 1-b;
+				start2 += b;
+				num1 -= 1-b;
+				num2 -= b;
+				k++;
+			
+
+			}
+			start1 = 0;
+			start2 = 0;
+			num1 = 0;
+			num2 = 0;
+			counter += limit;
+
+		}
+
+		/*std::cout << "offset1: " << *offset1 << std::endl;
+		std::cout << "offset2: " << *offset2 << std::endl;	
+		printArray(begin, end, " End array");*/
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		//std::iter_swap(www, offset2);
+		//std::iter_swap(offset2, offset1);
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		//
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_merge(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		index block1[BLOCKSIZE+1], block2[BLOCKSIZE+1];
+		//An index should never become less than 0. 
+		block1[BLOCKSIZE] = INFINITY;
+		block2[BLOCKSIZE] = INFINITY;
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		//std::cout << "Pivots: " << *pivot_positions[0] << ", " << *pivot_positions[1] << std::endl;
+		//printArray(begin, end, "Start array");
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+
+		int num1 = 0;
+		int num2 = 0;
+		int start1 = 0;
+		int start2 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		int num;
+		while (last - counter + 1 > 0) {
+
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					block1[num1] = j;
+					int o = less(counter[j], p1);
+					num1 += o;	
+					block2[num2] = j;
+					num2 += less(counter[j], p2) - o;
+			}
+			
+			//Rearrange the elements
+			//Find the first element we have stored in a block
+			num = num1+num2;
+			//std::cout << "I found elements: " << num << std::endl;
+			start1 += (num1 == 0) * (BLOCKSIZE-start1);
+			start2 += (num2 == 0) * (BLOCKSIZE-start2);
+			for(int k = 0; k < num; k++){
+				if(block1[start1] < block2[start2] ) {
+					rotations::rotate3(*(counter+block1[start1]), *offset2, *offset1);
+					offset1++;
+					offset2++;
+					start1++;
+					num1--;
+					//Move start1 to the end of the array
+					
+					start1 += (num1 == 0) * (BLOCKSIZE-start1);
+				}
+				else{
+					std::iter_swap(offset2, counter+block2[start2]);
+					start2++;
+					offset2++;
+					num2--;
+					start2 += (num2 == 0) * (BLOCKSIZE-start2);
+				}
+			}
+			start1 = 0;
+			start2 = 0;
+			num1 = 0;
+			num2 = 0;
+			counter += limit;
+
+		}
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_while(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		index block1[BLOCKSIZE+1], block2[BLOCKSIZE+1];
+		//An index should never become less than 0. 
+		block1[BLOCKSIZE] = INFINITY;
+		block2[BLOCKSIZE] = INFINITY;
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+
+		int num1 = 0;
+		int num2 = 0;
+		int start1 = 0;
+		int start2 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		int num;
+		while (last - counter + 1 > 0) {
+
+			//Seg fault issue here, look at simple
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					block1[num1] = j;
+					int o = less(counter[j], p1);
+					num1 += o;	
+					block2[num2] = j;
+					num2 += less(counter[j], p2) - o;
+			}
+			//Rearrange the elements
+			//Find the first element we have stored in a block
+			num = num1+num2;
+			int k = 0; 
+			start1 += (num1 == 0) * (BLOCKSIZE-start1);
+			start2 += (num2 == 0) * (BLOCKSIZE-start2);
+			while(k < num){
+
+				//Look into how merge is done properly according to branchless merge sort
+				while(block1[start1] < block2[start2] ){
+					//double check rotations
+					rotations::rotate3(*(counter+block1[start1]), *offset2, *offset1);
+					offset1++;
+					offset2++;
+					start1++;
+					num1--;
+					k++;
+					start1 += (num1 == 0) * (BLOCKSIZE-start1);
+				}
+				while(block2[start2] < block1[start1]){
+					std::iter_swap(offset2, counter+block2[start2]);
+					start2++;
+					offset2++;
+					num2--;
+					k++;
+					start2 += (num2 == 0) * (BLOCKSIZE-start2);
+				}
+
+			}
+			start1 = 0;
+			start2 = 0;
+			num1 = 0;
+			num2 = 0;
+			counter += limit;
+
+		}
+
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_simple_elements(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		typedef typename std::iterator_traits<iter>::value_type val;
+		val block1[BLOCKSIZE];
+		val block2[BLOCKSIZE];
+		val block3[BLOCKSIZE];
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+
+		int num1 = 0;
+		int num2 = 0;
+		int num3 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		while (last - counter + 1 > 0) {
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					//Should be copied and not a reference
+					block1[num1] = *(counter+j);
+					int o = less(counter[j], p1);
+					num1 += o;	
+					block2[num2] = *(counter+j);
+					int s = less(counter[j], p2);
+					num2 +=  s - o;
+					block3[num3] = *(counter+j);
+					num3 += 1 - s;
+			}
+			
+			for(index p = 0; p < num1; p++){
+				*counter = block1[p];
+				rotations::rotate3(*counter, *offset2, *offset1);
+				offset1++;
+				offset2++;
+				counter++;
+			}
+
+			for(index q = 0; q < num2; q++){
+				*counter = block2[q];
+				std::iter_swap(offset2, counter);
+				counter++;
+				offset2++;
+			}
+			for(index p = 0; p < num3; p++){
+				*counter = block3[p];
+				counter++;
+			}
+			num1 = 0;
+			num2 = 0;
+			num3 = 0;
+
+		}
+		
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_elements(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		typedef typename std::iterator_traits<iter>::value_type val;
+		val block1[BLOCKSIZE];
+		val block2[BLOCKSIZE];
+		val block3[BLOCKSIZE];
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+
+		int num1 = 0;
+		int num2 = 0;
+		int num3 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		while (last - counter + 1 > BLOCKSIZE) {
+			for (index j = 0; j < BLOCKSIZE; j++) {
+					//Should be copied and not a reference
+					block1[num1] = *(counter+j);
+					int o = less(counter[j], p1);
+					num1 += o;	
+					block2[num2] = *(counter+j);
+					int s = less(counter[j], p2);
+					num2 +=  s - o;
+					block3[num3] = *(counter+j);
+					num3 += 1 - s;
+			}
+			
+			for(index p = 0; p < num1; p++){
+				*counter = block1[p];
+				rotations::rotate3(*counter, *offset2, *offset1);
+				offset1++;
+				offset2++;
+				counter++;
+			}
+
+			for(index q = 0; q < num2; q++){
+				*counter = block2[q];
+				std::iter_swap(offset2, counter);
+				counter++;
+				offset2++;
+			}
+			for(index p = 0; p < num3; p++){
+				*counter = block3[p];
+				counter++;
+			}
+			num1 = 0;
+			num2 = 0;
+			num3 = 0;
+
+		}
+		for (index j = 0; j < (last-counter+1); j++) {
+				//Should be copied and not a reference
+				block1[num1] = *(counter+j);
+				int o = less(counter[j], p1);
+				num1 += o;	
+				block2[num2] = *(counter+j);
+				int s = less(counter[j], p2);
+				num2 +=  s - o;
+				block3[num3] = *(counter+j);
+				num3 += 1 - s;
+		}
+		
+		for(index p = 0; p < num1; p++){
+			*counter = block1[p];
+			rotations::rotate3(*counter, *offset2, *offset1);
+			offset1++;
+			offset2++;
+			counter++;
+		}
+
+		for(index q = 0; q < num2; q++){
+			*counter = block2[q];
+			std::iter_swap(offset2, counter);
+			counter++;
+			offset2++;
+		}
+		for(index p = 0; p < num3; p++){
+			*counter = block3[p];
+			counter++;
+		}
+		
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+
+
+	//Bulk move has to be rethought, it does not work in the current state of the idea
+	template<typename iter, typename Compare>
+	inline void dual_lomuto_block_partition_simple_elements_move(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		typedef typename std::iterator_traits<iter>::value_type val;
+		val block1[BLOCKSIZE];
+		val block2[BLOCKSIZE];
+		val block3[BLOCKSIZE];
+		//index R[block], L[block];
+
+		iter last = end-1;
+		//Moving pivots to the last positions
+		
+		std::iter_swap(pivot_positions[0], last);
+		const typename std::iterator_traits<iter>::value_type & p1 = *last;
+		pivot_positions[0] = last;
+		last--;
+		std::iter_swap(pivot_positions[1], last);
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[1] = last;
+		last--;
+
+		int num1 = 0;
+		int num2 = 0;
+		int num3 = 0;
+		iter counter = begin;
+		iter offset1 = begin;
+		iter offset2 = begin;
+		while (last - counter + 1 > 0) {
+			int t = (last-counter+1);
+			int limit = std::min(BLOCKSIZE, t);
+			for (index j = 0; j < limit; j++) {
+					//Should be copied and not a reference
+					block1[num1] = *(counter+j);
+					int o = less(counter[j], p1);
+					num1 += o;	
+					block2[num2] = *(counter+j);
+					int s = less(counter[j], p2);
+					num2 +=  s - o;
+					block3[num3] = *(counter+j);
+					num3 += 1 - s;
+			}
+
+			//std::move(block1, block1+num1, counter);
+			for(index p = 0; p < num1; p++){
+				*counter = block1[p];
+				rotations::rotate3(*counter, *offset2, *offset1);
+				offset1++;
+				offset2++;
+				counter++;
+			}
+
+			for(index q = 0; q < num2; q++){
+				*counter = block2[q];
+				std::iter_swap(offset2, counter);
+				counter++;
+				offset2++;
+			}
+			//Should be able to bulk move this
+
+//			std::copy(block3, (block3+num3), counter);
+			//std::memcpy(static_cast<void *>(counter), &block3, sizeof(iter) * num3);std::move
+			std::move(block3, (block3+num3), counter);
+			counter+= num3;
+			/*for(index p = 0; p < num3; p++){
+				*counter = block3[p];
+				counter++;
+			}*/
+			num1 = 0;
+			num2 = 0;
+			num3 = 0;
+
+		}
+		
+		rotations::rotate3(*offset2, *offset1, *(end-1));
+		offset2++;
+		std::iter_swap(end-2, offset2);
+		*ret1 = offset1;
+		*ret2 = offset2;
+	}
+
+	//Multi-Pivot part 
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_mo5 {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_5_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_merge {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_merge(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_while {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_while(begin, end, pivots, less, p1, p2);
+		}
+	};	
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_optimized {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_move {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements_move(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	//Three different pivot selection strategies
+
+	//Third and fifth
+	//*******************************************
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_third_fifth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_merge_third_fifth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_merge(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_while_third_fifth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_while(begin, end, pivots, less, p1, p2);
+		}
+	};	
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_third_fifth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_move_third_fifth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_third_fifth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements_move(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+
+	//Second and forth
+	//*******************************************
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_second_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_second_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_merge_second_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_second_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_merge(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_while_second_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_second_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_while(begin, end, pivots, less, p1, p2);
+		}
+	};	
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_second_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_second_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_move_second_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_second_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements_move(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	//First and forth
+	//*******************************************
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_first_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_merge_first_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_merge(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_while_first_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_while(begin, end, pivots, less, p1, p2);
+		}
+	};	
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_first_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_move_first_forth {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_forth_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements_move(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	//First and seventh
+	//*******************************************
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_first_seventh {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_merge_first_seventh {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			dual_lomuto_block_partition_merge(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_while_first_seventh {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			dual_lomuto_block_partition_while(begin, end, pivots, less, p1, p2);
+		}
+	};	
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_first_seventh {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements(begin, end, pivots, less, p1, p2);
+		}
+	};		
+
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_move_first_seventh {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			dual_lomuto_block_partition_simple_elements_move(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+template<typename iter, typename Compare>
+inline void lomuto_2_partition(iter begin, iter end, iter* pivot_positions, Compare less,iter* ret1, iter* ret2){
+	typedef typename std::iterator_traits<iter>::difference_type index;
+	typedef typename std::iterator_traits<iter>::value_type val;
+	val block1[BLOCKSIZE];
+	int num1 = 0;
+	val block2[BLOCKSIZE];
+	int num2 = 0;
+	val block3[BLOCKSIZE];
+	int num3 = 0;
+	iter last = end-1;
+	std::iter_swap(pivot_positions[0], last);
+	const typename std::iterator_traits<iter>::value_type & p1 = *last;
+	pivot_positions[0] = last;
+	last--;
+	iter offset1 = begin;
+	std::iter_swap(pivot_positions[1], last);
+	const typename std::iterator_traits<iter>::value_type & p2 = *last;
+	pivot_positions[1] = last;
+	last--;
+	iter offset2 = begin;
+	iter counter = begin;
+	while (last - counter + 1 > BLOCKSIZE) {
+		for(index j = 0;j < BLOCKSIZE; j++) {
+			block1[num1] = *(counter+j);
+			int o1 = less(counter[j], p1);
+			num1+= o1;
+			block2[num2] = *(counter+j);
+			int o2 = less(counter[j], p2);
+			num2 += o2 - o1;
+			block3[num3] = *(counter+j);
+			num3 += 1 - o2;
+		}
+		for(index p = 0; p < num1; p++){
+			*counter = block1[p];
+			rotations::rotate3(*counter, *offset2, *offset1);
+			offset2++;
+			offset1++;
+			counter++;
+		}
+		num1 = 0;
+		for(index p = 0; p < num2; p++){
+			*counter = block2[p];
+			std::iter_swap(offset2, counter);
+			offset2++;
+			counter++;
+		}
+		num2 = 0;
+		for(index p = 0; p < num3; p++){
+			*counter = block3[p];
+			counter++;
+		}
+		num3 = 0;
+	}
+		for(index j = 0;j < (last-counter+1); j++) {
+			block1[num1] = *(counter+j);
+			int o1 = less(counter[j], p1);
+			num1+= o1;
+			block2[num2] = *(counter+j);
+			int o2 = less(counter[j], p2);
+			num2 += o2 - o1;
+			block3[num3] = *(counter+j);
+			num3 += 1 - o2;
+		}
+		for(index p = 0; p < num1; p++){
+			*counter = block1[p];
+			rotations::rotate3(*counter, *offset2, *offset1);
+			offset2++;
+			offset1++;
+			counter++;
+		}
+		for(index p = 0; p < num2; p++){
+			*counter = block2[p];
+			std::iter_swap(offset2, counter);
+			offset2++;
+			counter++;
+		}
+		for(index p = 0; p < num3; p++){
+			*counter = block3[p];
+			counter++;
+		}
+	rotations::rotate3(*offset2, *offset1,  *(end-1));
+	offset2++;
+	std::iter_swap(end-2, offset2);
+	*ret1 = offset1;
+	*ret2 = offset2;
+}
+
+	template< typename iter, typename Compare>
+	struct Dual_Lomuto_Block_partition_elements_generated_test {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_first_seventh_element(begin, end-1, less);
+			lomuto_2_partition(begin, end, pivots, less, p1, p2);
+		}
+	};
+
+	//Multi-Pivot part 
+	template< typename iter, typename Compare>
+	struct Dual_Pivot_Inline_Hoare_Block_partition_simple {
+		static inline void partition(iter begin, iter end, iter* p1, iter* p2, Compare less) {
+			iter* pivots = median::mp_tertiles_of_3_pivots_2(begin, end-1, less);
+			dual_pivot_inline_block_partition_simple(begin, end, pivots, less, p1, p2);
+		}
+	};
 };

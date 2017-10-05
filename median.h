@@ -273,4 +273,234 @@ namespace median {
 		assert(!(less(*(end - 1), *middle)));
 		return middle;
 	}
+
+
+	template<typename iter, typename Compare>
+	inline iter* mp_random(iter begin, iter end, Compare less){
+		iter sek1 = begin;
+		iter sek2 = begin+1;
+		sort_pair(sek1, sek2, less);
+		
+		/*
+		int tmp = (end-begin)/4;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(2*tmp);
+		iter sek3 = begin+(3*tmp);
+		sort_pair(begin, sek1, less);
+		sort_pair(sek3, end, less);
+		sort_pair(sek2, end, less);
+		sort_pair(sek2, sek3, less);
+		sort_pair(begin, sek3, less);
+		sort_pair(begin, sek2, less);
+		sort_pair(sek1, end, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek1, sek2, less);*/
+		iter* ret = new iter[2];
+		ret[0] = sek1;
+		ret[1] = sek2; 
+		return ret;
+	}
+
+	template<typename iter, typename Compare>
+	inline iter* mp_tertiles_of_3_pivots_2(iter begin, iter end, Compare less){
+		int tmp = (end-begin)/4;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(2*tmp);
+		iter sek3 = begin+(3*tmp);
+		sort_pair(begin, sek1, less);
+		sort_pair(sek3, end, less);
+		sort_pair(sek2, end, less);
+		sort_pair(sek2, sek3, less);
+		sort_pair(begin, sek3, less);
+		sort_pair(begin, sek2, less);
+		sort_pair(sek1, end, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek1, sek2, less);
+		iter* ret = new iter[2];
+		ret[0] = sek1;
+		ret[1] = sek3; 
+		return ret;
+	}
+	template<typename iter, typename Compare>
+	inline iter* mp_tertiles_of_5_pivots_2(iter begin, iter end, Compare less){
+		int tmp = (end-begin)/6;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(2*tmp);
+		iter sek3 = begin+(3*tmp);
+		iter sek4 = begin+(4*tmp);
+		iter sek5 = begin+(5*tmp);
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek1, sek4, less);	
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		assert(sek2 != sek4);
+		iter* ret = new iter[2];
+		ret[0] = sek2;
+		ret[1] = sek4; 
+		return ret;
+	}
+
+	template<typename iter, typename Compare>
+	inline iter* mp_third_fifth_element(iter begin, iter end, Compare less){
+		//Based on: http://jgamble.ripco.net/cgi-bin/nw.cgi?inputs=7&algorithm=best&output=macro
+		int tmp = (end-begin)/6;
+		iter sek0 = begin;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(tmp*2);
+		iter sek3 = begin+(tmp*3);
+		iter sek4 = begin+(tmp*4);
+		iter sek5 = begin+(tmp*5);
+		iter sek6 = end-1;
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek0, sek2, less);
+		sort_pair(sek0, sek1, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek5, sek6, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek4, sek6, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek0, sek4, less);
+		sort_pair(sek0, sek3, less);
+		sort_pair(sek1, sek5, less);
+		sort_pair(sek2, sek6, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		iter* ret = new iter[2];
+		ret[0] = sek2;
+		ret[1] = sek4; 
+		return ret;
+	}
+
+	template<typename iter, typename Compare>
+	inline iter* mp_second_forth_element(iter begin, iter end, Compare less){
+		//Based on: http://jgamble.ripco.net/cgi-bin/nw.cgi?inputs=7&algorithm=best&output=macro
+		int tmp = (end-begin)/6;
+		iter sek0 = begin;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(tmp*2);
+		iter sek3 = begin+(tmp*3);
+		iter sek4 = begin+(tmp*4);
+		iter sek5 = begin+(tmp*5);
+		iter sek6 = end-1;
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek0, sek2, less);
+		sort_pair(sek0, sek1, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek5, sek6, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek4, sek6, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek0, sek4, less);
+		sort_pair(sek0, sek3, less);
+		sort_pair(sek1, sek5, less);
+		sort_pair(sek2, sek6, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		iter* ret = new iter[2];
+		ret[0] = sek1;
+		ret[1] = sek3; 
+		return ret;
+	}
+
+
+	template<typename iter, typename Compare>
+	inline iter* mp_first_forth_element(iter begin, iter end, Compare less){
+		//Based on: http://jgamble.ripco.net/cgi-bin/nw.cgi?inputs=7&algorithm=best&output=macro
+		int tmp = (end-begin)/6;
+		iter sek0 = begin;
+		iter sek1 = (begin+tmp);
+		iter sek2 = begin+(tmp*2);
+		iter sek3 = begin+(tmp*3);
+		iter sek4 = begin+(tmp*4);
+		iter sek5 = begin+(tmp*5);
+		iter sek6 = end-1;
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek0, sek2, less);
+		sort_pair(sek0, sek1, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek5, sek6, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek4, sek6, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek0, sek4, less);
+		sort_pair(sek0, sek3, less);
+		sort_pair(sek1, sek5, less);
+		sort_pair(sek2, sek6, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		iter* ret = new iter[2];
+		ret[0] = sek0;
+		ret[1] = sek3; 
+		return ret;
+	}
+
+
+	//Something wrong here
+	//Might be the last element?
+	template<typename iter, typename Compare>
+	inline iter* mp_first_seventh_element(iter begin, iter end, Compare less){
+		//Based on: http://jgamble.ripco.net/cgi-bin/nw.cgi?inputs=7&algorithm=best&output=macro
+		int tmp = (end-begin)/6;
+		iter sek0 = begin;
+		iter sek1 = begin+tmp;
+		iter sek2 = begin+(tmp*2);
+		iter sek3 = begin+(tmp*3);
+		iter sek4 = begin+(tmp*4);
+		iter sek5 = begin+(tmp*5);
+		iter sek6 = end-1;
+		std::cout << "End: " << *end << std::endl;
+		std::cout << "Sek0: " << *sek0 << std::endl;
+		std::cout << "Sek1: " << *sek1 << std::endl;
+		std::cout << "Sek2: " << *sek2 << std::endl;
+		std::cout << "Sek3: " << *sek3 << std::endl;
+		std::cout << "Sek4: " << *sek4 << std::endl;
+		std::cout << "Sek5: " << *sek5 << std::endl;
+		std::cout << "Sek6: " << *sek6 << std::endl;
+
+		sort_pair(sek1, sek2, less);
+		sort_pair(sek0, sek2, less);
+		sort_pair(sek0, sek1, less);
+		sort_pair(sek3, sek4, less);
+		sort_pair(sek5, sek6, less);
+		sort_pair(sek3, sek5, less);
+		sort_pair(sek4, sek6, less);
+		sort_pair(sek4, sek5, less);
+		sort_pair(sek0, sek4, less);
+		sort_pair(sek0, sek3, less);
+		sort_pair(sek1, sek5, less);
+		sort_pair(sek2, sek6, less);
+		sort_pair(sek2, sek5, less);
+		sort_pair(sek1, sek3, less);
+		sort_pair(sek2, sek4, less);
+		sort_pair(sek2, sek3, less);
+		iter* ret = new iter[2];
+		std::cout << "End: SECOND  " << *end << std::endl;
+		std::cout << "Sek0: " << *sek0 << std::endl;
+		std::cout << "Sek1: " << *sek1 << std::endl;
+		std::cout << "Sek2: " << *sek2 << std::endl;
+		std::cout << "Sek3: " << *sek3 << std::endl;
+		std::cout << "Sek4: " << *sek4 << std::endl;
+		std::cout << "Sek5: " << *sek5 << std::endl;
+		std::cout << "Sek6: " << *sek6 << std::endl;
+		ret[0] = sek0;
+		ret[1] = sek6; 
+		std::cout << "Sek0: " << *sek0 << std::endl;
+		std::cout << "Sek6: " << *sek6 << std::endl;
+		return ret;
+	}
 }
