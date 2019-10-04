@@ -37,7 +37,6 @@
 #include <assert.h>
 #include <functional>
 #include "rotations.h"
-
 #ifndef BLOCKSIZE
 #define BLOCKSIZE 128
 #endif
@@ -1070,6 +1069,7 @@ namespace partition {
 
 		if((end - begin) < 0) {
 			std::cout << desc << " printing failed because begin was above end" << std::endl;
+			
 			return;
 		}
 		iter begin2 = begin;
@@ -1085,6 +1085,7 @@ namespace partition {
 		std::cout << std::endl;
 
 	}
+
 
 	template<typename iter, typename Compare>
 	inline void multi_pivot_2_block_partition_simple(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
@@ -1147,6 +1148,7 @@ namespace partition {
 					num_rr += (!b1 && !less(p2, *leftIndex));
 				}
 			}
+
 			//Rearrange the elements
 			//Swap lr with rr
 			
@@ -1667,8 +1669,7 @@ namespace partition {
 			for (index j = 0; j < limit; j++) {
 					block1[num1] = j;
 					int o = less(counter[j], p1);
-					num
-          1 += o;	
+					num1 += o;	
 					block2[num2] = j;
 					num2 += less(counter[j], p2) - o;
 			}
@@ -2466,6 +2467,245 @@ inline void lomuto_2_partition(iter begin, iter end, iter* pivot_positions, Comp
 		}
 	};
 
+
+/*
+	template<typename iter, typename Compare>
+	inline void dual_pivot_inline_block_partition_simple(iter begin, iter end, iter* pivot_positions, Compare less, iter* ret1, iter* ret2) {
+		typedef typename std::iterator_traits<iter>::difference_type index;		
+		int block = 2 * BLOCKSIZE;
+		iter origBegin = begin;
+		iter origEnd = end;
+		index R[block], L[block];
+
+		iter last = end-1;
+		std::cout << "p1: " << *pivot_positions[0] << " p2: " << *pivot_positions[1] << std::endl;
+		//Moving pivots to the last positions
+		printArray(begin, end, "Before swap");
+		std::iter_swap(pivot_positions[0], begin);
+		std::iter_swap(pivot_positions[1], last);
+		printArray(begin, end, "After swap");
+		const typename std::iterator_traits<iter>::value_type & p1 = *begin;
+		const typename std::iterator_traits<iter>::value_type & p2 = *last;
+		pivot_positions[0] = begin;
+		pivot_positions[1] = last;
+		last--;
+		begin++;
+		//printArray(begin-1, last+1, "After swap");
+		
+		int num_left = 0;
+		int num_right = 0;
+		iter middle = last;
+		int start_left = 0;
+		int start_right = 0;
+
+		int num;
+		while (last - begin + 1 > 2 * BLOCKSIZE) {
+			std::cout << "never here" << std::endl;
+			if(num_left == 0) {
+				start_left = 0;
+				for(index j = 0; j < BLOCKSIZE; j++){
+					L[num_left] = j;
+					num_left += (!(less(begin[j], p1)));
+				}
+			}
+			if(num_right == 0){
+				start_right = 0;
+				for(index j = 0; j < BLOCKSIZE; j++){
+					R[num_right] = j;
+					num_right += !(less(p1, *(last-j)));
+					int notM = !(less(p2, *(last-j)));
+				//	std::iter_swap(last-j, 
+				//	middle);
+				}
+			}
+			//rearrange elements
+			num = std::min(num_left, num_right);
+			for(int j = 0; j < num; j++){
+				int notM = less(p2, *(last-R[start_right+j]));
+
+				rotations::rotate3(*(begin+L[start_left+j]),
+				*(last - R[start_right + j]),
+				*(last - (R[start_right + j] + 
+				(notM * (middle - (begin+R[start_right+j])))))); 
+				//pretty sure this wont work cuz middle might be away
+				// from last
+				
+				middle += notM;
+			}
+
+			num_left -= num;
+			num_right -= num;
+			start_left += num;
+			start_right += num;
+			begin += (num_left == 0) ? BLOCKSIZE : 0;
+			last -= (num_right == 0) ? BLOCKSIZE : 0;
+		}//End main loop
+
+		index shiftR = 0, shiftL = 0;
+		if (num_right == 0 && num_left == 0){
+			shiftL = ((last-begin) + 1) /2;
+			shiftR = (last - begin) +1 - shiftL;
+			assert(shiftL >= 0); assert(shiftL <= BLOCKSIZE);
+			assert(shiftR >= 0); assert(shiftR <= BLOCKSIZE);
+			start_left = 0; start_right = 0;
+			for (index j = 0; j < shiftL; j++) {
+				L[num_left] = j;
+				num_left += (!less(begin[j], p1));
+				R[num_right] = j;
+				num_right += !less(p1, *(last - j));
+				int notM = !(less(p2, *(last-j)));
+				std::iter_swap((last-j), 
+				(last - j - (notM * (middle - (last-j))))); 
+			}
+			if (shiftL < shiftR)
+			{
+				assert(shiftL + 1 == shiftR);
+				R[num_right] = shiftR - 1;
+				num_right += !less(p1, *(last - shiftR + 1));
+			}
+		}
+		else if (num_right != 0) {
+			shiftL = (last - begin) - BLOCKSIZE + 1;
+			shiftR = BLOCKSIZE;
+			assert(shiftL >= 0); assert(shiftL <= BLOCKSIZE); assert(num_left == 0);
+			start_left = 0;
+			for (index j = 0; j < shiftL; j++) {
+				L[num_left] = j;
+				num_left += (!less(begin[j], p1));
+			}
+		}
+		else {
+			shiftL = BLOCKSIZE;
+			shiftR = (last - begin) - BLOCKSIZE + 1;
+			assert(shiftR >= 0); assert(shiftR <= BLOCKSIZE); assert(num_right == 0);
+			start_right = 0;
+			for (index j = 0; j < shiftR; j++) {
+				R[num_right] = j;
+				num_right += !(less(p1, *(last - j)));
+				int notM = !(less(p2, *(last-j)));
+				std::iter_swap(last-j, 
+				last - j - (notM * (middle - (last-j)))); 
+
+				//*(last - (R[start_right + j] -
+				//(notM * (middle - (last-R[start_right+j])))))); 
+			}
+		}
+
+
+
+		//rearrange final iteration
+		std::cout << "Last element in left block: " << *(begin + L[start_left+num_left]) << std::endl;
+		std::cout << "Last element in right block: " << *(last -R[start_right+num_right]) << std::endl;
+		printArray(begin, end, "Before we begin");
+		num = std::min(num_left, num_right);
+		for(int j = 0; j < num; j++){
+			int notM = 1 - less(*(begin+L[start_left+j]), p2);
+			printArray(begin, end, "before rotate");
+			std::cout << "notM: " << notM << std::endl;
+			std::cout << *(begin+L[start_left+j]) << " " <<  *(last - R[start_right + j]) << " " << *(last - (R[start_right + j] - 
+				(notM * (middle - (last-R[start_right+j]))))) << std::endl;
+
+			std::cout << "difference: " << (middle - (last-R[start_right+j])) << std::endl; 
+			rotations::rotate3(*(begin+L[start_left+j]),
+				*(last - R[start_right + j]),
+				*(last - (R[start_right + j] -
+				(notM * (middle - (last-R[start_right+j])))))); 
+			printArray(begin, end, "After rotate");
+			std::cout << "Middle before: " << *middle << std::endl;
+			middle -= notM;
+			std::cout << "Middle after: " << *middle << std::endl;
+		}
+
+		num_left -= num;
+		num_right -= num;
+		start_left += num;
+		start_right += num;
+		begin += (num_left == 0) ? shiftL : 0;
+		last -= (num_right == 0) ? shiftR : 0;
+
+		//needs to be fixed
+		//rearrange elements remaining in buffer
+		printArray(origBegin, origEnd, "Before finish");
+		if (num_left != 0)
+		{
+			assert(num_right == 0);
+			int lowerI = start_left + num_left - 1;
+			index upper = last - begin;
+			//search first element to be swapped
+			//Needs to be fixed
+			while (lowerI >= start_left && L[lowerI] == upper) {
+				int mNot = !(less(*(begin+L[lowerI]), p2));
+				std::iter_swap((begin+L[lowerI]), 
+					(begin+L[lowerI] + (mNot * (middle - (begin+L[lowerI]))))
+				);
+				middle -= mNot;
+				upper--; lowerI--;
+			}
+			while (lowerI >= start_left){
+				int mNot = !(less(*(begin+L[lowerI]), p2));
+				rotations::rotate3(
+					*(begin+L[lowerI]), //L
+					*(begin + upper), // S
+					*(begin + upper - 
+					(mNot * (middle - (begin+upper)))));
+
+/*				last - R[start_right + j],
+				last - (R[start_right + j] + 
+				(notM * (middle - (begin+R[start_right+j])))));
+				*/
+	/*
+				upper--;
+				lowerI--;
+				middle -= mNot;
+			}
+				//std::iter_swap(begin + upper--, begin + indexL[lowerI--]);
+			//needs to be fixed
+			std::cout << "in first cleanup" << std::endl;
+			std::iter_swap(pivot_positions[0], begin + upper + 1); // fetch the pivot 
+			std::iter_swap(pivot_positions[1], middle+1);
+			*ret1 = begin + upper + 1; 
+			*ret2 = middle+1;	
+			//return begin + upper + 1;
+		}
+		else if (num_right != 0) {
+			assert(num_left == 0);
+			int lowerI = start_right + num_right - 1;
+			index upper = last - begin;
+			//search first element to be swapped
+			while (lowerI >= start_right && R[lowerI] == upper) {
+				upper--; lowerI--;
+			}
+			
+			while (lowerI >= start_right)
+				std::iter_swap(last - upper--, last - R[lowerI--]);
+			
+			//should be fixed
+			std::cout << "in second cleanup" << std::endl;
+			std::iter_swap(pivot_positions[0], last - upper);// fetch the pivot 
+			std::iter_swap(pivot_positions[1], middle+1);
+			*ret1 = last - upper; 
+			*ret2 = middle+1;
+			//return last - upper;
+		}
+		else { //no remaining elements
+		std::cout << "in last cleanup" << std::endl;
+		std::cout << "middle: " << *middle << std::endl;	
+			assert(last + 1 == begin);
+			std::iter_swap(pivot_positions[0], begin-1);
+			std::iter_swap(pivot_positions[1], middle+1);
+			*ret1 = begin; 
+			*ret2 = middle+1;
+		}
+		printArray(origBegin, origEnd, "after finish");
+		/*
+		//Need to figure out where to swap pivots
+		std::iter_swap(pivot_positions[0], begin);
+		std::iter_swap(pivot_positions[1], middle+1);
+		*ret1 = begin; 
+		*ret2 = middle+1;
+		*/
+	/*}*/
+
 	//Multi-Pivot part 
 	template< typename iter, typename Compare>
 	struct Dual_Pivot_Inline_Hoare_Block_partition_simple {
@@ -2474,4 +2714,172 @@ inline void lomuto_2_partition(iter begin, iter end, iter* pivot_positions, Comp
 			dual_pivot_inline_block_partition_simple(begin, end, pivots, less, p1, p2);
 		}
 	};
+
+/*
+	template<typename iter, typename Compare>
+	inline iter hoare_block_partition_simple_elements(iter begin, iter end, iter pivot_position, Compare less) {
+		typedef typename std::iterator_traits<iter>::difference_type index;
+		typedef typename std::iterator_traits<iter>::value_type val;
+		val indexL[BLOCKSIZE], indexR[BLOCKSIZE];
+
+		
+		iter last = end - 1;
+		std::iter_swap(pivot_position, last);
+		const typename std::iterator_traits<iter>::value_type & pivot = *last;
+		pivot_position = last;
+		last--;
+
+		int num_left = 0;
+		int num_right = 0;
+		int start_left = 0;
+		int start_right = 0;
+		int num;
+		//main loop
+		while (last - begin + 1 > 2 * BLOCKSIZE)
+		{
+			//Compare and store in buffers
+			if (num_left == 0) {
+				start_left = 0;
+				for (index j = 0; j < BLOCKSIZE; j++) {
+					indexL[num_left] = begin[j];
+					num_left += (!(less(begin[j], pivot)));				
+				}
+			}
+			if (num_right == 0) {
+				start_right = 0;
+				for (index j = 0; j < BLOCKSIZE; j++) {
+					indexR[num_right] = *(last-j);
+					num_right += !(less(pivot, *(last - j)));				
+				}
+			}
+
+			//Here We simply need to clean the blocks instead
+			//But how do we do that??
+			for(int j = 0; j < num_left){
+				continue;
+			}
+			//rearrange elements
+			num = std::min(num_left, num_right);
+			for (int j = 0; j < num; j++)
+				std::iter_swap(begin + indexL[start_left + j], last - indexR[start_right + j]);
+
+			num_left -= num;
+			num_right -= num;
+			start_left += num;
+			start_right += num;
+			begin += (num_left == 0) ? BLOCKSIZE : 0;
+			last -= (num_right == 0) ? BLOCKSIZE : 0;
+
+		}//end main loop
+
+		//Compare and store in buffers final iteration
+		index shiftR = 0, shiftL = 0;
+		if (num_right == 0 && num_left == 0) {	//for small arrays or in the unlikely case that both buffers are empty
+			shiftL = ((last - begin) + 1) / 2;
+			shiftR = (last - begin) + 1 - shiftL;
+			assert(shiftL >= 0); assert(shiftL <= BLOCKSIZE);
+			assert(shiftR >= 0); assert(shiftR <= BLOCKSIZE);
+			start_left = 0; start_right = 0;
+			for (index j = 0; j < shiftL; j++) {
+				indexL[num_left] = j;
+				num_left += (!less(begin[j], pivot));
+				indexR[num_right] = j;
+				num_right += !less(pivot, *(last - j));
+			}
+			if (shiftL < shiftR)
+			{
+				assert(shiftL + 1 == shiftR);
+				indexR[num_right] = shiftR - 1;
+				num_right += !less(pivot, *(last - shiftR + 1));
+			}
+		}
+		else if (num_right != 0) {
+			shiftL = (last - begin) - BLOCKSIZE + 1;
+			shiftR = BLOCKSIZE;
+			assert(shiftL >= 0); assert(shiftL <= BLOCKSIZE); assert(num_left == 0);
+			start_left = 0;
+			for (index j = 0; j < shiftL; j++) {
+				indexL[num_left] = j;
+				num_left += (!less(begin[j], pivot));
+			}
+		}
+		else {
+			shiftL = BLOCKSIZE;
+			shiftR = (last - begin) - BLOCKSIZE + 1;
+			assert(shiftR >= 0); assert(shiftR <= BLOCKSIZE); assert(num_right == 0);
+			start_right = 0;
+			for (index j = 0; j < shiftR; j++) {
+				indexR[num_right] = j;
+				num_right += !(less(pivot, *(last - j)));
+			}
+		}
+
+		//rearrange final iteration
+		num = std::min(num_left, num_right);
+		for (int j = 0; j < num; j++)
+			std::iter_swap(begin + indexL[start_left + j], last - indexR[start_right + j]);
+
+		num_left -= num;
+		num_right -= num;
+		start_left += num;
+		start_right += num;
+		begin += (num_left == 0) ? shiftL : 0;
+		last -= (num_right == 0) ? shiftR : 0;			
+		//end final iteration
+
+
+		//rearrange elements remaining in buffer
+		if (num_left != 0)
+		{
+			
+			assert(num_right == 0);
+			int lowerI = start_left + num_left - 1;
+			index upper = last - begin;
+			//search first element to be swapped
+			while (lowerI >= start_left && indexL[lowerI] == upper) {
+				upper--; lowerI--;
+			}
+			while (lowerI >= start_left)
+				std::iter_swap(begin + upper--, begin + indexL[lowerI--]);
+
+			std::iter_swap(pivot_position, begin + upper + 1); // fetch the pivot 
+			return begin + upper + 1;
+		}
+		else if (num_right != 0) {
+			assert(num_left == 0);
+			int lowerI = start_right + num_right - 1;
+			index upper = last - begin;
+			//search first element to be swapped
+			while (lowerI >= start_right && indexR[lowerI] == upper) {
+				upper--; lowerI--;
+			}
+			
+			while (lowerI >= start_right)
+				std::iter_swap(last - upper--, last - indexR[lowerI--]);
+
+			std::iter_swap(pivot_position, last - upper);// fetch the pivot 
+			return last - upper;
+		}
+		else { //no remaining elements
+			assert(last + 1 == begin);
+			std::iter_swap(pivot_position, begin);// fetch the pivot 
+			return begin;
+		}
+	}
+	
+	template<typename iter, typename Compare>
+	struct Hoare_block_partition_simple_elements {
+		static inline iter partition(iter begin, iter end, Compare less) {
+			//choose pivot
+			iter mid = median::median_of_3(begin, end, less);
+			//partition
+			return hoare_block_partition_simple_elements(begin + 1, end - 1, mid, less);
+		}
+		static inline iter partition(iter begin, iter end, iter pivot, Compare less) {
+			//partition
+			return hoare_block_partition_simple_elements(begin + 1, end - 1, pivot, less);
+		}
+	};
+
+*/
 };
