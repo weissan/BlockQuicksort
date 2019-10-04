@@ -37,9 +37,8 @@
 #include <assert.h>
 #include <functional>
 #include "rotations.h"
-//#defineMOREPARTITIONERS
 #ifndef BLOCKSIZE
-#define BLOCKSIZE 128//2//128
+#define BLOCKSIZE 128
 #endif
 #ifndef PIVOTSAMPLESIZE
 #define PIVOTSAMPLESIZE 23
