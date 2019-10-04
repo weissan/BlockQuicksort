@@ -14,6 +14,8 @@ CXX=g++
 CXXFLAGS=-O3 -std=c++11 -Wall -march=native -DNDEBUG 
 CXXFLAGS_un=-O3 -std=c++11 -Wall -march=native -funroll-loops -DNDEBUG 
 CXXFLAGS_O1=-O1 -std=c++11 -Wall -march=native -DNDEBUG 
+CXXFLAGS_DEBUG=-O3 -std=c++11 -Wall -march=native -DNDEBUG -funroll-loops
+
 
 header-files:= $(wildcard *.h++)
 versions:= $(basename $(header-files))
@@ -40,13 +42,15 @@ seeds = 123456 234567 345678 456789 567890 678901 789012 890123 901234 1012345 1
 
 
 
-algorithms = blocked_double_pivot_check_mosqrt blocked_mosqrt blocked_mo5_mo5 blocked blocked_simple ssssort stl stl_gcc Yaroslavskiy
+algorithms = multi_pivot_2_blocked_mo_5_equal_thousand multi_pivot_2_blocked_equal_thousand multi_pivot_2_blocked_mo_5_thousand multi_pivot_2_blocked_thousand multi_pivot_2_blocked_mo_5_equal multi_pivot_2_blocked_equal multi_pivot_2_blocked_mo_5 multi_pivot_2_blocked blocked_double_pivot_check_mosqrt blocked_mosqrt blocked_mo5_mo5 blocked blocked_simple ssssort stl stl_gcc Yaroslavskiy
 
-allalgorithms = blocked_double_pivot_check_mosqrt blocked_mosqrt blocked_mo5_mo5 blocked_simple blocked ssssort ssssort4 stl stl_gcc Yaroslavskiy qsort3_aumueller lomuto_katajainen blocked_stl_loop blocked_hoare_finish lomuto_katajainen
+blockalgorithms = multi_pivot_2_blocked blocked
 
-branchAlgs = blocked_double_pivot_check_mosqrt blocked_mo5_mo5 lomuto_katajainen ssssort stl_gcc Yaroslavskiy blocked blocked_no_is lomuto_katajainen_no_is
+allalgorithms = multi_pivot_2_blocked_mo_5 multi_pivot_2_blocked blocked_double_pivot_check_mosqrt blocked_mosqrt blocked_mo5_mo5 blocked_simple blocked ssssort ssssort4 stl stl_gcc Yaroslavskiy qsort3_aumueller lomuto_katajainen blocked_stl_loop blocked_hoare_finish lomuto_katajainen
 
-pivotTestAlgs = blocked_mosqrt blocked_mo5_mo5 blocked_mo23 blocked_mo3_mo5 blocked_mo3_mo3 blocked_mo5 blocked
+branchAlgs = multi_pivot_2_blocked_mo_5 multi_pivot_2_blocked blocked_double_pivot_check_mosqrt blocked_mo5_mo5 lomuto_katajainen ssssort stl_gcc Yaroslavskiy blocked blocked_no_is lomuto_katajainen_no_is
+
+pivotTestAlgs = multi_pivot_2_blocked_mo_5 multi_pivot_2_blocked blocked_mosqrt blocked_mo5_mo5 blocked_mo23 blocked_mo3_mo5 blocked_mo3_mo3 blocked_mo5 blocked
 
 blocksizes = 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 16777216
 data = b c d i m o p q r s t u v w z
@@ -64,9 +68,44 @@ all: 	$(time-tests) $(comp-tests) $(move-tests)
 data: 	$(move-tests-data)  $(comp-tests-data) $(time-tests-data) 
 # $(instruction-tests-data) $(cache-tests-data) $(branch-tests-data)
 
+newsmalldata = c s v
+existingsmalldata = i m w c s v
+
+perftimetest:
+	@for alg in $(algorithms); do \
+			echo $$alg ; \
+			cp $$alg.h++ algorithm.h++ ; \
+			$(CXX) $(CXXFLAGS) -DNAME=$$alg -DTYPE=int driver.cpp ; \
+				for d in $(newsmalldata) ; do \
+				  echo $$d ; \
+				  for n in $(smallN) ; do \
+					perf stat ./a.out $$n $$d 123456; \
+				  done ; \
+				done; \
+			rm -f ./a.out ; \
+	done
+
+
+newtimetest:
+	@for seed in $(seeds) ; do \
+		echo "Now running seed: $$seed"; \
+		for alg in $(algorithms); do \
+			echo $$alg ; \
+			cp $$alg.h++ algorithm.h++ ; \
+			$(CXX) $(CXXFLAGS) -DNAME=$$alg -DTYPE=int driver.cpp ; \
+				for d in $(newsmalldata) ; do \
+				  echo $$d ; \
+				  for n in $(smallN) ; do \
+					./a.out $$n $$d $$seed >> results.time-newtimetest.csv; \
+				  done ; \
+				done; \
+			rm -f ./a.out ; \
+		done ;\
+	done
 
 timetest:
 	@for seed in $(seeds) ; do \
+		echo "Now running seed: $$seed"; \
 		for alg in $(algorithms); do \
 			echo $$alg ; \
 			cp $$alg.h++ algorithm.h++ ; \
@@ -127,7 +166,21 @@ pivotmethodtest:
 			done ;\
 		done ;\
 	 done
-	 
+
+newblocksizetest:
+	@for alg in $(blockalgorithms); do \
+			echo $$alg ; \
+			cp $$alg.h++ algorithm.h++ ; \
+			for b in $(blocksizes) ; do \
+				echo $$b ; \
+				$(CXX) $(CXXFLAGS) -DNAME=$$alg -DBLOCKSIZE=$$b -DTYPE=int -DBLOCKSIZETEST=1 driver.cpp  ; \
+				for n in $(N_blocksize) ; do \
+					echo "doing $$n" ; \
+					./a.out $$n r $$seed >> results.blocksizes.time.csv; \
+				 done ;\
+		  done ; \
+		done 
+
 blocksizetest: 
 	@cp blocked.h++ algorithm.h++ ; \
 	for seed in $(seeds) ; do \
@@ -153,7 +206,7 @@ blocksizetest-data:
 				$(CXX) $(CXXFLAGS) -DNAME=blocked -DBLOCKSIZE=$$b -DTYPE=$$t -DBLOCKSIZETEST=1 driver.cpp  ; \
 				for n in $(N_blocksize) ; do \
 					./a.out $$n r $$seed >> results.blocksizes.time.csv; \
-				 done ;\
+				 done ;
 			done ;\
 		done ;\
 	 done
@@ -251,6 +304,14 @@ $(comp-tests-data): %.datacomp : %.h++
 	  done \
 	done ; \
 	rm -f algorithm.h++ ./a.out 
+
+build: 
+	cp $(ALGNAME).h++ algorithm.h++ ; \
+	$(CXX) $(CXXFLAGS_DEBUG) -DNAME=$(ALGNAME) -DTYPE=int driver.cpp ;
+
+buildtype: 
+	cp $(ALGNAME).h++ algorithm.h++ ; \
+	$(CXX) $(CXXFLAGS_DEBUG) -DNAME=$(ALGNAME) -DTYPE=$(TYPE) driver.cpp ;
 
 clean:
 	- rm  -f a.out temp algorithm.h++ *.csv 2>/dev/null
