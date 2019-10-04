@@ -14,6 +14,8 @@ This package consists of the following files:
 
 - interfaces for BlockQuicksort with different pivot selection methods / partitioners: blocked.h++, blocked_double_pivot_check.h++, blocked_double_pivot_check_mosqrt.h++, blocked_hoare_finish.h++, blocked_mo3_mo3.h++, blocked_mo3_mo5.h++, blocked_mo5_mo5.h++, blocked_Mo5.h++, blocked_mo23.h++, blocked_mosqrt.h++, blocked_simple.h++, hoare.h++
 
+The method blocked_double_pivot_check_mosqrt.h++ performed in all benchmarks close to the optimum and therefore is shown in most plots in the paper. For comparison also the method blocked_simple.h++ is shown in most plots in the paper.
+
 - lomuto_katajainen.h++ : interface for Tuned Quicksort by Elmasry, Katajainen and Stenmark http://www.diku.dk/~jyrki/Myris/Kat2014S.html
 - ssssort.h++ : Super Scalar Sample Sort implemented by Timo Bingmann and Lorenz Hübschle-Schneider https://github.com/lorenzhs/ssssort/blob/b931c024cef3e6d7b7e7fd3ee3e67491d875e021/ssssort.h
 - stl_gcc : copy of std::sort from the GCC 4.7.2 implementation
