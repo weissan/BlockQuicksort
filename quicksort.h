@@ -48,7 +48,9 @@ namespace quicksort {
 		{
 			if (depth_limit == 0)
 			{
-				partial_sort_count++;
+#ifdef PARTIAL_SORT_COUNT
+			        partial_sort_count++;
+#endif
 				std::partial_sort(first, last, last, comp);
 				return;
 			}
