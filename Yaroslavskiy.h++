@@ -2,19 +2,22 @@
 * Code due to Vladimir Yaroslavskiy
 * Retrieved from http://codeblab.com/wp-content/uploads/2009/09/DualPivotQuicksort.pdf
 * Converted to C++ by Armin Weiß <armin.weiss@fmi.uni-stuttgart.de>
+* Converted to sort inputs larger than 2^32 by Michael Axtmann <michael.axtmann@kit.edu>
 */
+
+#include <iterator>
 
 namespace Yaroslavskiy {
 	/*
-	private static void swap(int[] a, int i, int j) {
-	 int temp = a[i];
+	private static void swap(long[] a, long i, long j) {
+	 long temp = a[i];
 	 a[i] = a[j];
 	 a[j] = temp;
 	}*/
   template<typename iter, typename comparator>
-  void dualPivotQuicksort(iter left, iter right, int div, comparator comp) {
+  void dualPivotQuicksort(iter left, iter right, long div, comparator comp) {
     using t = typename std::iterator_traits<iter>::value_type;
-	 int len = right - left;
+	 long len = right - left;
 	 if (len < 27) { // insertion sort for tiny array
 	 for (iter i = left + 1; i <= right; i++) {
 		 for (iter j = i; j > left && comp(*j , *(j - 1)); j--) {
@@ -23,7 +26,7 @@ namespace Yaroslavskiy {
 	 }
 	 return;
 	 }
-	 int third = len / div;
+	 long third = len / div;
 	 // "medians"
 	 iter m1 = left + third;
 	 iter m2 = right - third;
@@ -63,7 +66,7 @@ namespace Yaroslavskiy {
 		 }
 	 }
 	 // swaps
-	 int dist = great - less;
+	 long dist = great - less;
 	 if (dist < 13) {
 		div++;
 	 }
