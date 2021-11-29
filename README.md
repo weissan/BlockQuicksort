@@ -1,7 +1,6 @@
 # BlockQuicksort
-Code of BlockQuicksort and other algorithms tested in the paper
-"BlockQuicksort: How Branch Mispredictions don't affect Quicksort"
-by Stefan Edelkamp and Armin Weiß (available at http://arxiv.org/abs/1604.06697).
+Code of BlockQuicksort and other algorithms tested in the paper "BlockQuicksort: Avoiding Branch Mispredictions in Quicksort" by Stefan Edelkamp and Armin Weiß (available at https://dl.acm.org/doi/10.1145/3274660, conference version at ESA 2016 https://drops.dagstuhl.de/opus/volltexte/2016/6389/, preprint on arXiv under the title
+"BlockQuicksort: How Branch Mispredictions don't affect Quicksort" http://arxiv.org/abs/1604.06697).
 
 This package consists of the following files:
 - makefile
